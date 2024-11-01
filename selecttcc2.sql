@@ -1,0 +1,1 @@
+SELECT * FROM horarios_disponiveis WHERE data = '2024-10-10';
