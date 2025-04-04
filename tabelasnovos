@@ -1,0 +1,121 @@
+-- Criação do banco de dados
+CREATE DATABASE Pallozo;
+USE Pallozo;
+
+-- Tabela cliente
+CREATE TABLE cliente (
+    cpf VARCHAR(14) PRIMARY KEY,
+    nome_cliente VARCHAR(100) NOT NULL,
+    contato VARCHAR(20),
+    email VARCHAR(100),
+    data_registro DATE
+);
+
+-- Tabela Profissional
+CREATE TABLE Profissional (
+    cnpj VARCHAR(18) PRIMARY KEY,
+    nome_funcionario VARCHAR(100) NOT NULL,
+    cargo VARCHAR(50),
+    contato VARCHAR(20),
+    disponibilidade VARCHAR(100),  -- Ajustado para detalhar melhor a disponibilidade
+    descricao TEXT,
+    status VARCHAR(20) DEFAULT 'ativo'
+);
+
+-- Tabela servico
+CREATE TABLE servico (
+    id_servico INT AUTO_INCREMENT PRIMARY KEY,
+    nome_servico VARCHAR(100) NOT NULL,
+    preco DECIMAL(10,2)
+);
+
+-- Tabela agendamento
+CREATE TABLE agendamento (
+    id_agendamento INT AUTO_INCREMENT PRIMARY KEY,
+    hora TIME NOT NULL,
+    data DATE NOT NULL,
+    status VARCHAR(20) DEFAULT 'agendado',
+    fk_profissional_cnpj VARCHAR(18),  -- Relacionamento direto com o profissional
+    FOREIGN KEY (fk_profissional_cnpj) REFERENCES Profissional(cnpj) ON DELETE RESTRICT
+);
+
+-- Tabela avaliacao (com validação de nota)
+CREATE TABLE avaliacao (
+    id_avaliacao INT AUTO_INCREMENT PRIMARY KEY,
+    nota INT NOT NULL,
+    comentario TEXT,
+    fk_cliente_cpf VARCHAR(14),
+    CONSTRAINT chk_nota CHECK (nota BETWEEN 1 AND 5), -- Validação adicionada
+    FOREIGN KEY (fk_cliente_cpf) REFERENCES cliente(cpf) ON DELETE RESTRICT
+);
+
+-- Tabela servico_favorito
+CREATE TABLE servico_favorito (
+    id_favorito INT AUTO_INCREMENT PRIMARY KEY,
+    data_adicionado DATE,
+    fk_cliente_cpf VARCHAR(14),
+    fk_servico_id_servico INT,  -- Relacionamento com o serviço favorito
+    FOREIGN KEY (fk_cliente_cpf) REFERENCES cliente(cpf) ON DELETE RESTRICT,
+    FOREIGN KEY (fk_servico_id_servico) REFERENCES servico(id_servico) ON DELETE RESTRICT
+);
+
+-- Tabela pagamento (com status)
+CREATE TABLE pagamento (
+    id_pagamento INT AUTO_INCREMENT PRIMARY KEY,
+    forma_de_pagamento VARCHAR(50) NOT NULL,
+    valor DECIMAL(10,2) NOT NULL,
+    fk_profissional_cnpj VARCHAR(18),
+    status VARCHAR(20) DEFAULT 'pendente',
+    FOREIGN KEY (fk_profissional_cnpj) REFERENCES Profissional(cnpj) ON DELETE RESTRICT
+);
+
+-- Tabelas de relacionamento (mantidas originais)
+CREATE TABLE agendar (
+    fk_cliente_cpf VARCHAR(14),
+    fk_agendamento_id_agendamento INT,
+    PRIMARY KEY (fk_cliente_cpf, fk_agendamento_id_agendamento),
+    FOREIGN KEY (fk_cliente_cpf) REFERENCES cliente(cpf) ON DELETE RESTRICT,
+    FOREIGN KEY (fk_agendamento_id_agendamento) REFERENCES agendamento(id_agendamento) ON DELETE RESTRICT
+);
+
+CREATE TABLE atribui (
+    fk_agendamento_id_agendamento INT,
+    fk_profissional_cnpj VARCHAR(18),
+    PRIMARY KEY (fk_agendamento_id_agendamento, fk_profissional_cnpj),
+    FOREIGN KEY (fk_agendamento_id_agendamento) REFERENCES agendamento(id_agendamento) ON DELETE RESTRICT,
+    FOREIGN KEY (fk_profissional_cnpj) REFERENCES Profissional(cnpj) ON DELETE RESTRICT
+);
+
+CREATE TABLE escolher (
+    fk_agendamento_id_agendamento INT,
+    fk_servico_id_servico INT,
+    PRIMARY KEY (fk_agendamento_id_agendamento, fk_servico_id_servico),
+    FOREIGN KEY (fk_agendamento_id_agendamento) REFERENCES agendamento(id_agendamento) ON DELETE RESTRICT,
+    FOREIGN KEY (fk_servico_id_servico) REFERENCES servico(id_servico) ON DELETE RESTRICT
+);
+
+CREATE TABLE Profissional_servico (
+    fk_profissional_cnpj VARCHAR(18),
+    fk_servico_id_servico INT,
+    PRIMARY KEY (fk_profissional_cnpj, fk_servico_id_servico),
+    FOREIGN KEY (fk_profissional_cnpj) REFERENCES Profissional(cnpj) ON DELETE RESTRICT,
+    FOREIGN KEY (fk_servico_id_servico) REFERENCES servico(id_servico) ON DELETE RESTRICT
+);
+
+CREATE TABLE servico_avaliacao (
+    fk_servico_id_servico INT,
+    fk_avaliacao_id_avaliacao INT,
+    PRIMARY KEY (fk_servico_id_servico, fk_avaliacao_id_avaliacao),
+    FOREIGN KEY (fk_servico_id_servico) REFERENCES servico(id_servico) ON DELETE RESTRICT,
+    FOREIGN KEY (fk_avaliacao_id_avaliacao) REFERENCES avaliacao(id_avaliacao) ON DELETE RESTRICT
+);
+
+CREATE TABLE pagar (
+    fk_cliente_cpf VARCHAR(14),
+    fk_pagamento_id_pagamento INT,
+    fk_agendamento_id_agendamento INT,  -- Relacionamento com o agendamento
+    PRIMARY KEY (fk_cliente_cpf, fk_pagamento_id_pagamento),
+    FOREIGN KEY (fk_cliente_cpf) REFERENCES cliente(cpf) ON DELETE RESTRICT,
+    FOREIGN KEY (fk_pagamento_id_pagamento) REFERENCES pagamento(id_pagamento) ON DELETE RESTRICT,
+    FOREIGN KEY (fk_agendamento_id_agendamento) REFERENCES agendamento(id_agendamento) ON DELETE RESTRICT
+);
