@@ -1,0 +1,124 @@
+<?php
+// === PHP no topo: conexão e processamento ===
+$host = 'localhost';
+$dbname = 'Pallozo';
+$user = 'root';
+$pass = '';
+
+$mensagem = '';
+
+try {
+    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $user, $pass);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    if ($_SERVER["REQUEST_METHOD"] === "POST") {
+        $ddd = $_POST['ddd'] ?? '';
+        $phone = $_POST['phone'] ?? '';
+        $senha = $_POST['password'] ?? '';
+
+        if (!empty($ddd) && !empty($phone) && !empty($senha)) {
+            $contato = '+55' . $ddd . $phone;
+            $senhaCriptografada = password_hash($senha, PASSWORD_DEFAULT);
+
+            // Gerar CPF fake (para testes)
+            $cpfFake = '000.000.' . rand(100, 999) . '-' . rand(10, 99);
+
+            // Insere apenas contato e senha, os demais ficam NULL
+            $sql = "INSERT INTO cliente (cpf, contato, senha) VALUES (:cpf, :contato, :senha)";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([
+                'cpf' => $cpfFake,
+                'contato' => $contato,
+                'senha' => $senhaCriptografada
+            ]);
+
+            $mensagem = "Usuário cadastrado com sucesso!";
+        } else {
+            $mensagem = "Preencha todos os campos!";
+        }
+    }
+} catch (PDOException $e) {
+    $mensagem = "Erro: " . $e->getMessage();
+}
+?>
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Pallozo</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="shortcut icon" href="icon/1.ico" type="image/x-icon">
+    <style>
+        .mensagem {
+            text-align: center;
+            margin-bottom: 20px;
+            color: green;
+            font-weight: bold;
+        }
+        .mensagem.erro {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-content">
+        <div class="image-section">
+            <img src="img/Rectangle 4519.png" alt="Barbearia estilizada">
+        </div>
+        <div class="login-section">
+            <h1 class="logo">PALLOZO</h1>
+            <h2>Login</h2>
+
+            <!-- Mensagem de status -->
+            <?php if (!empty($mensagem)) : ?>
+                <div class="mensagem <?= str_contains($mensagem, 'sucesso') ? '' : 'erro' ?>">
+                    <?= $mensagem ?>
+                </div>
+            <?php endif; ?>
+
+            <!-- Formulário de login -->
+            <form method="POST" action="">
+                <label for="phone" class="label-left">Número de telefone</label>
+                <div class="input-group">
+                    <div class="phone-input">
+                        <span class="prefix">+55</span>
+                        <input type="text" id="ddd" name="ddd" placeholder="DDD" maxlength="2" inputmode="numeric" required oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+                        <input type="text" id="phone" name="phone" placeholder="Número" maxlength="9" inputmode="numeric" required oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+                    </div>
+                </div>
+
+                <label for="password" class="label-left">Senha</label>
+                <div class="input-group">
+                    <input type="password" id="password" name="password" placeholder="********" maxlength="8" required>
+                    <button type="button" class="eye-button" onclick="togglePasswordVisibility()">
+                        <img class="eye-icon" src="img/Invisible.png" alt="Mostrar senha" />
+                    </button>
+                </div>
+                <a href="#" class="forgot-password">Esqueceu a senha?</a>
+
+                <button type="submit" class="login-btn">Login</button>
+
+                <p>Não tem uma conta? <a href="cadastro.html" class="register-link">Registre-se</a></p>
+                <p class="divider">ou</p>
+
+                <button type="button" class="social-login google">
+                    <img class="eye-icon" src="img/Group 955.png" />Continue com Google
+                </button>
+                <button type="button" class="social-login apple">
+                    <img class="eye-icon" src="img/Apple logo.png" />Continue com Apple
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function togglePasswordVisibility() {
+            const passwordInput = document.getElementById("password");
+            const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
+            passwordInput.setAttribute("type", type);
+        }
+    </script>
+</body>
+</html>
